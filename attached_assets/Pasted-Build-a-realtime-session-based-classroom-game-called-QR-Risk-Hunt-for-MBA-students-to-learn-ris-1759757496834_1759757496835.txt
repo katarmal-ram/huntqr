@@ -1,0 +1,151 @@
+Build a realtime, session-based classroom game called **QR Risk Hunt** for MBA students to learn risk management and greed psychology.  
+
+### 🎯 Purpose
+Students form teams and scan QR codes (or type short codes).  
+Each scan yields a **random score** (−10 to +30), determined **at scan time** by the “Jackpot + Baiting” algorithm.  
+The system intentionally tempts players with streaks and near-misses, so they experience how greed or risk-taking affects outcomes — purely for educational simulation, no money involved.
+
+---
+
+## 🔧 Tech
+- Frontend: React + Vite (or Next.js if easier)
+- Database: Any database with realtime feature (tables listed below)
+- Hosting: Replit
+
+---
+
+## 👤 Roles
+- **Admin** – creates sessions, adds codes, starts/stops games, monitors leaderboard.
+- **Player** – joins a team, scans or types codes, sees live score updates.
+
+---
+
+## ⏱ Game Flow
+1. Admin creates a **session** (name, timer = 15 minutes).
+2. Admin uploads or manually enters ~20 code IDs.
+3. Players sign up (nickname only) and join a team (up to 5 teams).
+4. When admin presses **Start**, timer begins.
+5. Each team finds printed codes around class.
+6. When a player enters/scans a code:
+   - System asks: “⚠️ This code may give positive or negative points. Proceed?”
+   - On confirm → server generates random score via Jackpot + Baiting algorithm.
+   - Code is locked for that session (one use only).
+   - Points added/subtracted in realtime; leaderboard updates instantly.
+7. When timer ends → final leaderboard appears.
+8. Admin can **replay** results for analysis (risk curves, volatility, average gain).
+
+---
+
+## 🎰 Jackpot + Baiting Algorithm (server-side only)
+
+Goal: teach *greed & risk* effects.
+
+Rules:
+- Each scan returns integer ∈ [−10, 30].
+- 70 % of scans use **baiting bias**: high chance of small positives (+1 to +10), low chance of small losses (−5 to −1).  
+  → encourages players to keep scanning.
+- 5 % of scans trigger a **Jackpot payout** (random +15 to +30) that resets hidden jackpot pool.
+- 25 % of scans trigger **loss correction** (−10 to −6) to show volatility.
+- Jackpot pool grows by +1 for each non-jackpot scan and is capped at 30.
+- All RNG seeds stored for replay.
+
+Example (Node.js):
+
+```js
+let jackpot = 0;
+
+function jackpotBaitingRandom() {
+  const r = Math.random();
+  if (r < 0.05 && jackpot > 0) {
+    const payout = Math.min(30, jackpot + Math.floor(Math.random()*10));
+    jackpot = 0;
+    return payout;
+  } else if (r < 0.75) {
+    jackpot += 1;
+    const vals = [1,2,3,4,5,6,7,8,9,10,-1,-2,-3,-4,-5];
+    return vals[Math.floor(Math.random()*vals.length)];
+  } else {
+    jackpot += 1;
+    return -10 + Math.floor(Math.random()*5); // -10..-6
+  }
+}
+🗄️ Database Schema
+sessions
+{id, name, algorithm, status, start_at, end_at, timer_seconds}
+
+codes
+{id, session_id, code_string, used_by_team, used_at}
+
+teams
+{id, session_id, name, total_points}
+
+users
+{id, name, team_id, role}
+
+scans
+{id, session_id, team_id, user_id, code_id, points, rand_seed, created_at}
+
+⚙️ Features
+Admin dashboard:
+
+Create/start/stop/replay sessions.
+
+Upload codes or auto-generate.
+
+View live leaderboard.
+
+Player screen:
+
+Join team.
+
+Enter code manually or via QR scan (use html5-qrcode library).
+
+See confirmation modal.
+
+View running score, team score, timer.
+
+Realtime sync using Realtime channels.
+
+Game timer auto-stops session after 15 minutes.
+
+Replay view: shows each team’s risk curve over time.
+
+Export results as CSV.
+
+🧩 Educational Analytics (for Admin)
+Average points per scan.
+
+Standard deviation (volatility).
+
+Number of negative vs positive scans.
+
+“Jackpot hit” times.
+
+Per-team scan count (activity level).
+
+🛡️ Ethics / Safety
+Must show “Educational Simulation Only” disclaimer on splash screen.
+
+No money, rewards, or gambling; symbolic prizes only.
+
+Players can leave game anytime.
+
+Admin can delete or reset session.
+
+RNG seeds stored for transparency.
+
+🚀 Deliverables
+Working game hosted on Replit.
+
+Admin & player UIs.
+
+README explaining:
+
+How to add codes.
+
+How algorithm works.
+
+How to reset/replay game.
+
+What classroom discussion topics to use (risk vs reward, greed bias, volatility).
+
